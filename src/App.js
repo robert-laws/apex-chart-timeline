@@ -8,6 +8,12 @@ function App() {
   const [events, setEvents] = useState([]);
   const [selectedEntry, setSelectedEntry] = useState(null);
 
+  // Define the number of hours to subtract
+  const offsetHours = 3;
+
+  // Helper function to adjust time
+  const adjustTime = (timestamp, hoursToSubtract) => new Date(timestamp - hoursToSubtract * 3600000);
+
   useEffect(() => {
     // Load the Google API client and initialize it
     window.gapi.load("client", initClient);
@@ -34,7 +40,7 @@ function App() {
         timeMin: new Date().toISOString(),
         showDeleted: false,
         singleEvents: true,
-        maxResults: 10,
+        maxResults: 50,
         orderBy: "startTime",
       })
       .then((response) => {
@@ -54,12 +60,42 @@ function App() {
   return (
     <div style={{ padding: 20 }}>
       <h1 className="text-uppercase">Public Calendar Events</h1>
-      Pass the fetched events and the callback to Timeline
+      View of all events organized by their category.
       <Timeline events={events} onEntrySelect={handleEntrySelect} />
       {selectedEntry && (
-        <div>
+        <div
+          style={{
+            marginTop: 20,
+            padding: 10,
+            border: "1px solid #ccc",
+            borderRadius: 4,
+            backgroundColor: "#f9f9f9",
+          }}
+        >
           <h2>Selected Event</h2>
-          <p>{JSON.stringify(selectedEntry)}</p>
+          <p>
+            <strong>Title:</strong> {selectedEntry.x}
+          </p>
+          {selectedEntry.l && (
+            <p>
+              <strong>Location:</strong> {selectedEntry.l}
+            </p>
+          )}
+          <p>
+            <strong>Start:</strong>{" "}
+            {adjustTime(selectedEntry.y[0], offsetHours).toLocaleDateString()}{" "}
+            {/* {adjustTime(selectedEntry.y[0], offsetHours).toLocaleTimeString()} */}
+          </p>
+          <p>
+            <strong>End:</strong>{" "}
+            {adjustTime(selectedEntry.y[1], (offsetHours + 1)).toLocaleDateString()}{" "}
+            {/* {adjustTime(selectedEntry.y[1], (offsetHours + 1)).toLocaleTimeString()} */}
+          </p>
+          {selectedEntry.z && (
+            <p>
+              <strong>Description:</strong> {selectedEntry.z}
+            </p>
+          )}          
         </div>
       )}
     </div>

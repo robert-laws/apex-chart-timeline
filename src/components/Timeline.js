@@ -2,6 +2,11 @@ import React from 'react'
 import Chart from "react-apexcharts";
 
 const Timeline = ({ events, onEntrySelect }) => {
+  // Define the offset in hours
+  const offsetHours = 3;
+  // Helper function that subtracts the given offset (in hours) from the timestamp
+  const adjustTime = (timestamp, hoursToSubtract) => new Date(timestamp - hoursToSubtract * 3600000);
+
   // Map the Google Calendar events into the format required by Apex Charts:
   const seriesData = events.map((event) => {
     // Use dateTime if available; otherwise use date (for all-day events)
@@ -17,6 +22,7 @@ const Timeline = ({ events, onEntrySelect }) => {
       // y must be an array with the start and end times (in milliseconds)
       y: [startDate.getTime(), endDate.getTime()],
       z: event.description,
+      l: event.location,
       fillColor: '#A08FFB'
     };
   });
@@ -33,10 +39,21 @@ const Timeline = ({ events, onEntrySelect }) => {
       type: "rangeBar",
       height: 350,
       // You can enable a toolbar or add more chart-level options here
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          const { dataPointIndex } = config;
+          if (dataPointIndex !== -1 && seriesData[dataPointIndex]) {
+            setTimeout(() => {
+              onEntrySelect(config.w.config.series[0].data[config.dataPointIndex]);
+            }, 0);
+          }
+        },
+      }
     },
     plotOptions: {
       bar: {
         horizontal: true,
+        borderRadius: 4,
         // Other bar settings (e.g., bar height) can be added here
       },
     },
@@ -58,10 +75,9 @@ const Timeline = ({ events, onEntrySelect }) => {
       custom: ({ series, seriesIndex, dataPointIndex, w }) => {
         const eventItem = seriesData[dataPointIndex];
         return `<div style="padding:10px;">
-                  <strong>${eventItem.x}</strong><br/>
-                  Start: ${new Date(eventItem.y[0]).toLocaleString()}<br/>
-                  End: ${new Date(eventItem.y[1]).toLocaleString()}<br />
-                  Description: ${eventItem.z ? eventItem.z : "N/A"}
+                  <strong>${eventItem.z ? eventItem.z : eventItem.x}</strong><br/>
+                  Start: ${adjustTime(eventItem.y[0], offsetHours).toLocaleDateString()}<br/>
+                  End: ${adjustTime(eventItem.y[1], (offsetHours + 1)).toLocaleDateString()}<br/>
                 </div>`;
       },
     },
@@ -73,10 +89,8 @@ const Timeline = ({ events, onEntrySelect }) => {
       series={series}
       type="rangeBar"
       height={350}
-      // If you want to add an on-click event, you can use the following:
-      // onDataPointSelection={(event, chartContext, config) => onEntrySelect(config)}
     />
   );
 };
 
-export default Timeline;
+export default React.memo(Timeline);
